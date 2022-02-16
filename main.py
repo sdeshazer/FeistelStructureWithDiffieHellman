@@ -14,7 +14,7 @@
 # 13 : M: 43
 # 1  : A: 3
 
-# Name Part:
+# [x] Name Part:
 # the cipher will be a 16-bit block cipher
 # the 8 bit ascii letters from the first 4 BYTES of your full name in uppercase
 #               S A M A
@@ -31,7 +31,7 @@
 # after rolling it.
 
 # rounding function F will be :
-# F(ki, m) = (ki xor m)     there will be no initial or final permutation
+# F(ki, m) = (ki xor m) there will be no initial or final permutation
 # your system will use 4 rounds
 
 # example input: 0123 fe23 a0f3d2219c
@@ -39,22 +39,91 @@
 # from STANDARD INPUT
 
 import sys  # standard input
-import array
+import binascii
 
 Letters = ['S', 'A', 'M', 'A']
-Primes = {71, 3, 43, 3}
+Primes = [71, 3, 43, 3]
+primeIndexList = []
+LettersInBin = []
+
+
+# convert bin to hex:
+def BinaryToHex(binary):
+    dec = int(binary, 2)
+    hex = hex(dec)
+    return hex
+
+
+# xor function in range of N
+def exor(bit1, bit2, n):
+    temp = ""
+    for i in range(n):
+        if bit1[i] == bit2[i]:
+            temp += "0"
+        else:
+            temp += "1"
+    # return resulting bit":
+    return temp
+
+
+def padBinary(binary, paddingLen):  # makes sure binary strings have exactly 8 bits
+    padding = ""
+    for a in range(paddingLen - len(binary)):  # repeat for the difference between 8 and the current length
+        padding += "0"
+    return padding + binary
+
+
+def feistalCipher():
+    # collect the ascii value from the letters:
+    greatestBit = 0
+    asciiValues = get_ascii_value(Letters)
+    for ascii in asciiValues:
+        # collect the index to the primes
+        primeIndexList.append(calculate_index(ascii))
+    for letter in Letters:
+        byte_array = letter.encode()
+        binary = int.from_bytes(byte_array, "big")
+        binstr = bin(binary)
+        conver_ascii()
+    print(asciiValues)
+    print(LettersInBin)
+
+def conver_ascii():
+    for value in asciiValues:
+        LettersInBin.append(getBinary(value, 8))
+
+
+def getBinary(decimal, padding):  # convert to binary
+    decimal = int(decimal)
+    binary = ''
+    if decimal == 0: decimal = 0
+    while decimal > 0:
+        binary = str(decimal % 2) + binary
+        decimal = decimal >> 1
+    binary = padBinary(binary, padding)
+    return binary
+
+
+def parse_primes_txt():
+    with open('primes.txt') as f:
+        lines = f.readlines()
+        for line in lines:
+            for c in line:
+                if not c.isdigit():
+                    continue
+                primeIndexList.append(c)
 
 
 def get_ascii_value(letterArray):
     asciiValues = []
     i = 0
     while i < len(letterArray):
-        #print(i)
+        # print(i)
         if letterArray[i] == 'S':
             asciiValues.append(83)
         if letterArray[i] == 'A':
             asciiValues.append(65)
-        if  letterArray[i] == 'M':
+        if letterArray[i] == 'M':
             asciiValues.append(77)
         i = i + 1
     return asciiValues
@@ -75,8 +144,6 @@ if __name__ == '__main__':
     asciiValues = get_ascii_value(Letters)
     print("ascii values:")
     print(asciiValues)
-    print("prime indeces:")
-    for ascii in asciiValues:
-        print(calculate_index(ascii))
-    #line = get_input()
+    feistalCipher()
 
+    # line = get_input()
