@@ -41,23 +41,22 @@
 import sys  # standard input
 import array
 
-Letters = {'S', 'A', 'M', 'A'}
+Letters = ['S', 'A', 'M', 'A']
 Primes = {71, 3, 43, 3}
 
 
 def get_ascii_value(letterArray):
     asciiValues = []
     i = 0
-    for letter in letterArray:
-        i = i + 1
-        print(i)
-        print(letter)
-        if letter == 'S':
+    while i < len(letterArray):
+        #print(i)
+        if letterArray[i] == 'S':
             asciiValues.append(83)
-        if letter == 'A':
+        if letterArray[i] == 'A':
             asciiValues.append(65)
-        if letter == 'M':
+        if  letterArray[i] == 'M':
             asciiValues.append(77)
+        i = i + 1
     return asciiValues
 
 
@@ -76,8 +75,8 @@ if __name__ == '__main__':
     asciiValues = get_ascii_value(Letters)
     print("ascii values:")
     print(asciiValues)
+    print("prime indeces:")
     for ascii in asciiValues:
         print(calculate_index(ascii))
-    line = get_input()
-    print(line)
+    #line = get_input()
 
