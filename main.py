@@ -15,6 +15,7 @@
 # 1  : A: 3
 
 # [x] Name Part:
+# key schedule based on the bits of your name
 # the cipher will be a 16-bit block cipher
 # the 8 bit ascii letters from the first 4 BYTES of your full name in uppercase
 #               S A M A
@@ -29,71 +30,57 @@
 # the first round is 0, the last round 3. N = 0,1,2,3.
 # use bitwise masks to compute the lowerBYTE(). we want the least significant 8 BITs from the 16 BIT key
 # after rolling it.
+# you can use the nonce as an initial value to the counter. Nonce is a constant.
 
 # rounding function F will be :
 # F(ki, m) = (ki xor m) there will be no initial or final permutation
 # your system will use 4 rounds
-
+#               nonce key message
 # example input: 0123 fe23 a0f3d2219c
 # output should be something like : ffaed0113b
 # from STANDARD INPUT
 
+# m = plain text
+#   1. divide M into two parts L0 and R0
+#   2. R0 is encoded using F(K, m) = (ki xor m) and store that in variable E
+#   3. new L1 = R0
+#   4. new R1 = L0 xor E
+#   5. concatenate L1 and R1 to obtain result.
+
+
 import sys  # standard input
 import binascii
 
-Letters = ['S', 'A', 'M', 'A']
-Primes = [71, 3, 43, 3]
+NameLetters = ['S', 'A', 'M', 'A']
+NameAsciiValues = []
+NamePrimes = [71, 3, 43, 3]
 primeIndexList = []
-LettersInBin = []
+NameLettersInBin = []
+MessageInAsciiValue = []
+MessageInBin = []
+
+subKeys = []
+
+nonce = ""
+key = ""
+message = ""
+
+
+def convertLetterToBin(message):
+    for letter in message:
+        ascii = ord(letter)
+        messageInBin = convertDecToBinaryAndPad(ascii, 8)
+        MessageInBin.append(messageInBin)
 
 
 # convert bin to hex:
-def BinaryToHex(binary):
+def convertBinaryToHex(binary):
     dec = int(binary, 2)
     hex = hex(dec)
     return hex
 
 
-# xor function in range of N
-def exor(bit1, bit2, n):
-    temp = ""
-    for i in range(n):
-        if bit1[i] == bit2[i]:
-            temp += "0"
-        else:
-            temp += "1"
-    # return resulting bit":
-    return temp
-
-
-def padBinary(binary, paddingLen):  # makes sure binary strings have exactly 8 bits
-    padding = ""
-    for a in range(paddingLen - len(binary)):  # repeat for the difference between 8 and the current length
-        padding += "0"
-    return padding + binary
-
-
-def feistalCipher():
-    # collect the ascii value from the letters:
-    greatestBit = 0
-    asciiValues = get_ascii_value(Letters)
-    for ascii in asciiValues:
-        # collect the index to the primes
-        primeIndexList.append(calculate_index(ascii))
-    for letter in Letters:
-        byte_array = letter.encode()
-        binary = int.from_bytes(byte_array, "big")
-        binstr = bin(binary)
-        conver_ascii()
-    print(asciiValues)
-    print(LettersInBin)
-
-def conver_ascii():
-    for value in asciiValues:
-        LettersInBin.append(getBinary(value, 8))
-
-
-def getBinary(decimal, padding):  # convert to binary
+def convertDecToBinaryAndPad(decimal, padding):  # convert to binary
     decimal = int(decimal)
     binary = ''
     if decimal == 0: decimal = 0
@@ -104,6 +91,39 @@ def getBinary(decimal, padding):  # convert to binary
     return binary
 
 
+def convertLetterToAscii(str):
+    arrayOfAsciiValues = []
+    for letter in str:
+        arrayOfAsciiValues.append(ord(letter))
+    return arrayOfAsciiValues
+
+
+# xor function in range of Nonce
+def xor(bit1, bit2, n):
+    temp = ""
+    for i in range(n):
+        if bit1[i] == bit2[i]:
+            temp += "0"
+        else:
+            temp += "1"
+    # return resulting bit":
+    return temp
+
+
+# make sure binary is 8 bits, paddingLen = 8 for example :
+def padBinary(binary, paddingLen):
+    padding = ""
+    for a in range(paddingLen - len(binary)):
+        padding += "0"
+    return padding + binary
+
+
+def convertAsciiToBin():
+    for value in asciiNameValues:
+        NameLettersInBin.append(convertDecToBinaryAndPad(value, 8))
+
+
+# parse a text file for primes:
 def parse_primes_txt():
     with open('primes.txt') as f:
         lines = f.readlines()
@@ -114,6 +134,7 @@ def parse_primes_txt():
                 primeIndexList.append(c)
 
 
+# hard coded ascii values for testing name:
 def get_ascii_value(letterArray):
     asciiValues = []
     i = 0
@@ -129,21 +150,44 @@ def get_ascii_value(letterArray):
     return asciiValues
 
 
+# calculate the index for each letter in name for prime list:
 def calculate_index(asciiValue):
     return asciiValue - 64
 
 
+# read in input from stdin:
 def get_input():
     for lineRead in sys.stdin:
-        # print(f'Input : {line}')
         return lineRead
+
+def splitInput(line):
+    i = 0
+    input = line.split()
+    for item in input:
+        if i == 0:
+            nonce = item
+        if i == 1:
+            key = item
+        if i == 2:
+            message = item
+        i = i + 1
+    print( "nonce: "+ nonce)
+    print( "key: "+ key)
+    print("message: " + message)
+
+def feistel():
+    # input name letters to retrieve ascii:
+    asciiNameValues = get_ascii_value(NameLetters)
+    print("please type cycles: 0123, a key and a message to encrypt. ex: 0123 fe23 a0f3d2219c")
+    line = get_input()
+    splitInput(line)
+
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    asciiValues = get_ascii_value(Letters)
-    print("ascii values:")
-    print(asciiValues)
-    feistalCipher()
+   feistel()
 
-    # line = get_input()
+
+
+
