@@ -61,10 +61,6 @@ MessageInBin = []
 
 subKeys = []
 
-nonce = ""
-key = ""
-message = ""
-
 
 def convertLetterToBin(message):
     for letter in message:
@@ -117,12 +113,6 @@ def padBinary(binary, paddingLen):
         padding += "0"
     return padding + binary
 
-
-def convertAsciiToBin():
-    for value in asciiNameValues:
-        NameLettersInBin.append(convertDecToBinaryAndPad(value, 8))
-
-
 # parse a text file for primes:
 def parse_primes_txt():
     with open('primes.txt') as f:
@@ -149,6 +139,9 @@ def get_ascii_value(letterArray):
         i = i + 1
     return asciiValues
 
+def convertNameAsciiToBin(asciiValues):
+    for value in asciiValues:
+        NameLettersInBin.append(convertDecToBinaryAndPad(value, 8))
 
 # calculate the index for each letter in name for prime list:
 def calculate_index(asciiValue):
@@ -160,7 +153,11 @@ def get_input():
     for lineRead in sys.stdin:
         return lineRead
 
-def splitInput(line):
+def feistel():
+    # input name letters to retrieve ascii:
+    asciiNameValues = get_ascii_value(NameLetters)
+    print("please type cycles: 0123, a key and a message to encrypt. ex: 0123 fe23 a0f3d2219c")
+    line = get_input()
     i = 0
     input = line.split()
     for item in input:
@@ -171,17 +168,19 @@ def splitInput(line):
         if i == 2:
             message = item
         i = i + 1
-    print( "nonce: "+ nonce)
-    print( "key: "+ key)
+    print("nonce: " + nonce)
+    print("key: " + key)
     print("message: " + message)
-
-def feistel():
-    # input name letters to retrieve ascii:
-    asciiNameValues = get_ascii_value(NameLetters)
-    print("please type cycles: 0123, a key and a message to encrypt. ex: 0123 fe23 a0f3d2219c")
-    line = get_input()
-    splitInput(line)
-
+    print("---------------------------------")
+    messageAscii = convertLetterToAscii(message)
+    print("message in Ascii:")
+    print(messageAscii)
+    messageInBin = []
+    for dec in messageAscii:
+        byteInBin = convertDecToBinaryAndPad(dec, 8)
+        messageInBin.append(byteInBin)
+    print("message in Bin:")
+    print(messageInBin)
 
 
 # Press the green button in the gutter to run the script.
