@@ -191,7 +191,7 @@ def feistelEncrypt():
     print("nonce: " + nonce)
     print("key: " + key)
     print("message: " + message)
-    encryptNonceWithCounter(nonce, message)
+    addCounterToNonce(nonce, message)
     # split the message in half:
     left = message[:len(message) // 2]
     right = message[len(message) // 2:]
@@ -235,7 +235,7 @@ def convertAsciiDecToHex(asciiDec):
     return hexList
 
 
-def encryptNonceWithCounter(nonce, message):
+def addCounterToNonce(nonce, message):
     if (len(message) % 2) > 0:
         print("error, must be an even number of character in message")
         print("message length:")
