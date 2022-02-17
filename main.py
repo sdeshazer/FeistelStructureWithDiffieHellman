@@ -50,6 +50,8 @@
 
 import sys  # standard input
 import binascii
+import array as arr
+import numpy
 
 NameLetters = ['S', 'A', 'M', 'A']
 NameAsciiValues = []
@@ -62,11 +64,20 @@ MessageInBin = []
 subKeys = []
 
 
-def convertLetterToBin(message):
+def convertMessageLetterToBin(message):
     for letter in message:
         ascii = ord(letter)
         messageInBin = convertDecToBinaryAndPad(ascii, 8)
         MessageInBin.append(messageInBin)
+
+
+def convertLettersToBin(str):
+    lettersInBin = []
+    for letter in str:
+        ascii = ord(letter)
+        letterBin = bin(ascii)
+        lettersInBin.append(letterBin)
+    return lettersInBin
 
 
 # convert bin to hex:
@@ -210,20 +221,21 @@ def feistelEncrypt():
         byteInBin = convertDecToBinaryAndPad(dec, 8)
         rightBin.append(byteInBin)
 
-    #print("message in Bin:")
-    #print("left: ")
-    #print(leftBin)
-    #print("right: ")
-    #print(rightBin)
-    #print("----------------------------------")
-    #print("----------[key Check]-------------")
-   # print("key:" + key)
+    # print("message in Bin:")
+    # print("left: ")
+    # print(leftBin)
+    # print("right: ")
+    # print(rightBin)
+    # print("----------------------------------")
+    # print("----------[key Check]-------------")
+    # print("key:" + key)
     keyascii = convertLetterToAscii(key)
     keyBin = []
     for dec in keyascii:
         byteInBin = convertDecToBinaryAndPad(dec, 8)
         keyBin.append(byteInBin)
-   # functionXor(keyBin, rightBin)
+
+    calcSubKeys(key)
 
 
 # takes a list of ascii values and returns a list of hex
@@ -255,7 +267,7 @@ def addCounterToNonce(nonce, message):
     for char in arrayChar:
         if (len(arrayChar) % 4) > 0:  # check that it can be evenly split
             arrayChar.append("0")  # if It's not even, append to make it even.
-            counter0 = counter0 + 1 # increment the first counter
+            counter0 = counter0 + 1  # increment the first counter
 
     # partition the message into sets of 4 characters:
     arrayMsgParitioned = [arrayChar[i:i + 4] for i in range(0, len(arrayChar), 4)]
@@ -275,7 +287,7 @@ def addCounterToNonce(nonce, message):
     for msg in concatinatedValues:
         if len(concatinatedValues) > counter2:
             paddedBinMsg = "{0:8b}".format(int(concatinatedValues[counter2], 16))
-            counter2 = counter2+1
+            counter2 = counter2 + 1
             msgBin = [int(msg) for msg in str(paddedBinMsg)]
             msgBinary.append(msgBin)
 
@@ -284,8 +296,8 @@ def addCounterToNonce(nonce, message):
     i = 0
     while i < len(msgBinary):
         while len(msgBinary[i]) < 16:
-            msgBinary[i].insert(0,0)
-        i = i +1
+            msgBinary[i].insert(0, 0)
+        i = i + 1
 
     combinedMsg = []
 
@@ -296,10 +308,38 @@ def addCounterToNonce(nonce, message):
         print(newNonce)
         nStr = str(newNonce)
         while len(nStr) < 4:
-            nStr = '0' + str(nStr) # adding leading zero to the nonce string
+            nStr = '0' + str(nStr)  # adding leading zero to the nonce string
         print(nStr)
         counter3 = counter3 + 1
 
+
+def calcSubKeys(key):
+    print("Name Primes:")
+    print(NamePrimes)
+    # the number of rounds:
+    numOfCycles = [0, 1, 2, 3]
+
+    for cycle in numOfCycles:
+        counter = numOfCycles[cycle]
+        rollValue = counter * 4
+        rollValue = -abs(rollValue)
+        keyBin = "{0:08b}".format(int(key, 16))
+        # print("binaryKey:")
+        # print(keyBin)
+        binNamePrimesStr = "{0:b}".format(NamePrimes[counter])
+        # print("binary name:")
+        # print(type(binName))
+
+        namePrimesInBin = []
+        # convert from string to list of bits:
+        for binary in binNamePrimesStr:
+            namePrimesInBin.append(int(binary))
+            if len(namePrimesInBin) < 16:
+                namePrimesInBin.insert(0,0)
+        print("name prime bin sting:")
+        print(binNamePrimesStr)
+        print("namePrimesInBin")
+        print(namePrimesInBin)
 
 
 
