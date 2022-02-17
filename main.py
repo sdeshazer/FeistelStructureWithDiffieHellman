@@ -87,6 +87,12 @@ def convertDecToBinaryAndPad(decimal, padding):  # convert to binary
     return binary
 
 
+def convertBinStrToBinary(binstr):
+    num = int(binstr, 2)
+    binary = bin(num)
+    return binary
+
+
 def convertLetterToAscii(str):
     arrayOfAsciiValues = []
     for letter in str:
@@ -112,6 +118,7 @@ def padBinary(binary, paddingLen):
     for a in range(paddingLen - len(binary)):
         padding += "0"
     return padding + binary
+
 
 # parse a text file for primes:
 def parse_primes_txt():
@@ -139,9 +146,11 @@ def get_ascii_value(letterArray):
         i = i + 1
     return asciiValues
 
+
 def convertNameAsciiToBin(asciiValues):
     for value in asciiValues:
         NameLettersInBin.append(convertDecToBinaryAndPad(value, 8))
+
 
 # calculate the index for each letter in name for prime list:
 def calculate_index(asciiValue):
@@ -149,15 +158,25 @@ def calculate_index(asciiValue):
 
 
 # read in input from stdin:
-def get_input():
+def getInput():
     for lineRead in sys.stdin:
         return lineRead
 
-def feistel():
+
+def rotateBitsLeft(binary, numOfBitsToRotate):
+    return (binary << numOfBitsToRotate) | (binary >> (16 - numOfBitsToRotate))
+
+
+def getStartingFromNonce(nonceStr):
+    return int(nonceStr[0])
+
+
+# encryption function, where most are pieced together:
+def feistelEncrypt():
     # input name letters to retrieve ascii:
     asciiNameValues = get_ascii_value(NameLetters)
-    print("please type cycles: 0123, a key and a message to encrypt. ex: 0123 fe23 a0f3d2219c")
-    line = get_input()
+    print("please type nonce: 0123, a key and a message to encrypt. ex: 0123 fe23 a0f3d2219c")
+    line = getInput()
     i = 0
     input = line.split()
     for item in input:
@@ -168,25 +187,131 @@ def feistel():
         if i == 2:
             message = item
         i = i + 1
+    print("----------[Input Check]---------------")
     print("nonce: " + nonce)
     print("key: " + key)
     print("message: " + message)
-    print("---------------------------------")
-    messageAscii = convertLetterToAscii(message)
-    print("message in Ascii:")
-    print(messageAscii)
-    messageInBin = []
-    for dec in messageAscii:
+    encryptNonceWithCounter(nonce, message)
+    # split the message in half:
+    left = message[:len(message) // 2]
+    right = message[len(message) // 2:]
+    print("left: " + left)
+    print("right: " + right)
+    leftascii = convertLetterToAscii(left)
+    rightascii = convertLetterToAscii(right)
+    print("left message in Ascii:")
+    print(leftascii)
+    leftBin = []
+    rightBin = []
+    for dec in leftascii:
         byteInBin = convertDecToBinaryAndPad(dec, 8)
-        messageInBin.append(byteInBin)
-    print("message in Bin:")
-    print(messageInBin)
+        leftBin.append(byteInBin)
+    for dec in rightascii:
+        byteInBin = convertDecToBinaryAndPad(dec, 8)
+        rightBin.append(byteInBin)
+
+    #print("message in Bin:")
+    #print("left: ")
+    #print(leftBin)
+    #print("right: ")
+    #print(rightBin)
+    #print("----------------------------------")
+    #print("----------[key Check]-------------")
+   # print("key:" + key)
+    keyascii = convertLetterToAscii(key)
+    keyBin = []
+    for dec in keyascii:
+        byteInBin = convertDecToBinaryAndPad(dec, 8)
+        keyBin.append(byteInBin)
+   # functionXor(keyBin, rightBin)
+
+
+# takes a list of ascii values and returns a list of hex
+def convertAsciiDecToHex(asciiDec):
+    hexList = []
+    for dec in asciiDec:
+        hexnum = hex(dec)
+        hexList.append(hexnum)
+    return hexList
+
+
+def encryptNonceWithCounter(nonce, message):
+    if (len(message) % 2) > 0:
+        print("error, must be an even number of character in message")
+        print("message length:")
+        print(len(message))
+        exit(0)
+
+    counter0 = 0
+    counter1 = 0
+    counter2 = 0
+    counter3 = 0
+    # converts message into an array of chars to use append method:
+    arrayChar = [char for char in message]
+    print("message in array:")
+    for char in arrayChar:  # check that the message is of greater length than 4 bytes.
+        if len(arrayChar) < 4:
+            arrayChar.append("0")  # else we add a 0 byte
+    for char in arrayChar:
+        if (len(arrayChar) % 4) > 0:  # check that it can be evenly split
+            arrayChar.append("0")  # if It's not even, append to make it even.
+            counter0 = counter0 + 1 # increment the first counter
+
+    # partition the message into sets of 4 characters:
+    arrayMsgParitioned = [arrayChar[i:i + 4] for i in range(0, len(arrayChar), 4)]
+    print("arrayMsgParitioned:")
+    print(arrayMsgParitioned)
+
+    concatinatedValues = []
+    for msg in arrayMsgParitioned:
+        if len(arrayMsgParitioned) > counter1:
+            hexMsg = "".join(arrayMsgParitioned[counter1])
+            counter1 = counter1 + 1
+            concatinatedValues.append(hexMsg)
+    print("concatinated Values:")
+    print(concatinatedValues)
+
+    msgBinary = []
+    for msg in concatinatedValues:
+        if len(concatinatedValues) > counter2:
+            paddedBinMsg = "{0:8b}".format(int(concatinatedValues[counter2], 16))
+            counter2 = counter2+1
+            msgBin = [int(msg) for msg in str(paddedBinMsg)]
+            msgBinary.append(msgBin)
+
+    print("msg binary:")
+    print(msgBinary)
+    i = 0
+    while i < len(msgBinary):
+        while len(msgBinary[i]) < 16:
+            msgBinary[i].insert(0,0)
+        i = i +1
+
+    combinedMsg = []
+
+    while counter3 < len(msgBinary):
+        nonce = int(nonce)
+        newNonce = nonce + counter3
+        print("new nonce")
+        print(newNonce)
+        nStr = str(newNonce)
+        while len(nStr) < 4:
+            nStr = '0' + str(nStr) # adding leading zero to the nonce string
+        print(nStr)
+        counter3 = counter3 + 1
+
+
+
+
+# the function to which we xor the key :
+def functionXor(keyInBin, rightMessageBin):
+    print("keyInBin:")
+    print(keyInBin)
+    print("right half of message bin:")
+    print(rightMessageBin)
+    print(type(keyInBin[0]))
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-   feistel()
-
-
-
-
+    feistelEncrypt()
