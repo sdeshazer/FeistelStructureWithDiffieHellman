@@ -64,7 +64,6 @@ MessageInBin = []
 SubKeys = []
 
 Bin1FFByte16 = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1]
-subKeys = []
 
 
 def convertMessageLetterToBin(message):
@@ -185,6 +184,41 @@ def rotateBitsLeft(binary, numOfBitsToRotate):
     return (binary << numOfBitsToRotate) | (binary >> (16 - numOfBitsToRotate))
 
 
+def stripOff0xOfHexValueReturnsStr(fullHexValue):
+    cList = list(fullHexValue)
+    cList= cList[2:]
+    cList = ''.join(cList)
+    return cList
+
+
+def getLowerByte(twoBytesList):
+    return twoBytesList[8:]
+
+
+def exor(byteA, byteB):
+    return byteA ^ byteB
+
+
+def convertBinStringToDec(binStr):
+    decInt = int(binStr, 2)
+    return decInt
+
+
+def convertBinListToStr(binList):
+    binStr = [str(binList) for binList in binList]
+    binStr = ''.join(binStr)
+    return binStr
+
+
+# the function to which we xor the key with the message half:
+def functionXor(keyInBin, rightMessageBin):
+    print("keyInBin:")
+    print(keyInBin)
+    print("right half of message bin:")
+    print(rightMessageBin)
+    print(type(keyInBin[0]))
+
+
 def getStartingFromNonce(nonceStr):
     return int(nonceStr[0])
 
@@ -209,41 +243,11 @@ def feistelEncrypt():
     print("nonce: " + nonce)
     print("key: " + key)
     print("message: " + message)
-    addCounterToNonce(nonce, message)
-    calcSubKeys(key)
+    addCounterToNonce(nonce, message, key)
+    SubKeys = calcSubKeys(key)
 
 
-def fiestelStructure(message):
-    # split the message in half:
-    left = message[:len(message) // 2]
-    right = message[len(message) // 2:]
-    print("left: " + left)
-    print("right: " + right)
-    leftascii = convertLetterToAscii(left)
-    rightascii = convertLetterToAscii(right)
-    print("left message in Ascii:")
-    print(leftascii)
-    leftBin = []
-    rightBin = []
-    for dec in leftascii:
-        byteInBin = convertDecToBinaryAndPad(dec, 8)
-        leftBin.append(byteInBin)
-    for dec in rightascii:
-        byteInBin = convertDecToBinaryAndPad(dec, 8)
-        rightBin.append(byteInBin)
-
-
-
-# takes a list of ascii values and returns a list of hex
-def convertAsciiDecToHex(asciiDec):
-    hexList = []
-    for dec in asciiDec:
-        hexnum = hex(dec)
-        hexList.append(hexnum)
-    return hexList
-
-
-def addCounterToNonce(nonce, message):
+def addCounterToNonce(nonce, message, key):
     if (len(message) % 2) > 0:
         print("error, must be an even number of character in message")
         print("message length:")
@@ -270,32 +274,31 @@ def addCounterToNonce(nonce, message):
     print("arrayMsgParitioned:")
     print(arrayMsgParitioned)
 
-    concatenatedValues = []
+    concatenatedMsgFromPartition = []
     for msg in arrayMsgParitioned:
         if len(arrayMsgParitioned) > counter1:
             hexMsg = "".join(arrayMsgParitioned[counter1])
             counter1 = counter1 + 1
-            concatenatedValues.append(hexMsg)
+            concatenatedMsgFromPartition.append(hexMsg)
     print("concatenated Values:")
-    print(concatenatedValues)
+    print(concatenatedMsgFromPartition)
 
     msgBinary = []
-    for msg in concatenatedValues:
-        if len(concatenatedValues) > counter2:
-            paddedBinMsg = "{0:8b}".format(int(concatenatedValues[counter2], 16))
+    for msg in concatenatedMsgFromPartition:
+        if len(concatenatedMsgFromPartition) > counter2:
+            paddedBinMsg = "{0:8b}".format(int(concatenatedMsgFromPartition[counter2], 16))
             counter2 = counter2 + 1
             msgBin = [int(msg) for msg in str(paddedBinMsg)]
             msgBinary.append(msgBin)
 
-    print("msg binary:")
-    print(msgBinary)
+    print("concatenated Msg From Partition", concatenatedMsgFromPartition)
+
     i = 0
     while i < len(msgBinary):
         while len(msgBinary[i]) < 16:
             msgBinary[i].insert(0, 0)
         i = i + 1
-
-    combinedMsg = []
+    print("msg binary:", msgBinary)
 
     while counter3 < len(msgBinary):
         nonce = int(nonce)
@@ -307,9 +310,25 @@ def addCounterToNonce(nonce, message):
             nStr = '0' + str(nStr)  # adding leading zero to the nonce string
         print(nStr)
         counter3 = counter3 + 1
+    #  fiestelStructure(msgBinary[counter3], key, concatenatedMsgFromPartition)
+
+
+def fiestelStructure(msgBinByte, nStr, msg):
+    counterN = 0
+
+
+
+# takes a list of ascii values and returns a list of hex
+def convertAsciiDecToHex(asciiDec):
+    hexList = []
+    for dec in asciiDec:
+        hexnum = hex(dec)
+        hexList.append(hexnum)
+    return hexList
 
 
 def calcSubKeys(key):
+    subKeys = []
     print("Name Primes:")
     print(NamePrimes)
     # the number of rounds N = 0, 1, 2, 3:
@@ -330,7 +349,7 @@ def calcSubKeys(key):
         for binary in binNamePrimes:
             binNamePrimesList.append(int(binary))
         while len(binNamePrimesList) < 16:
-                binNamePrimesList.insert(0, 0)
+            binNamePrimesList.insert(0, 0)
         print("binNamePrimes:")
         print(binNamePrimes)
         print("binNamePrimesStr: ")
@@ -358,42 +377,18 @@ def calcSubKeys(key):
         print(lowerBytePrimesAnd1FFList)
 
         # xor to get the subkey based on primes and key/counter:
-        subkeyN = exor(lowerBytePrimesAnd1FFList, lowerBytePrimesAnd1FFList)
+        subkeyN = exor(lowerBytePrimesAnd1FFList, lowerByteKeyAnd1FFList)
+        print("subkeyN", subkeyN)
         subkeyNStr = convertBinListToStr(subkeyN)
+
         subkeyNDec = convertBinStringToDec(subkeyNStr)
+        print("subkeyNDec", subkeyNDec)
         subkeyNHex = hex(subkeyNDec)
+        print("subkeyNHex", subkeyNHex)
         subKeysNHexStr = stripOff0xOfHexValueReturnsStr(subkeyNHex)
-        SubKeys.append(subKeysNHexStr)
-
-
-def stripOff0xOfHexValueReturnsStr(fullHexValue):
-    cList = list(fullHexValue)
-    hexStr = cList[2:]
-    cList = ''.join(cList)
-    return cList
-
-def getLowerByte(twoBytesList):
-    return twoBytesList[8:]
-
-def exor(byteA, byteB):
-    return byteA ^ byteB
-
-def convertBinStringToDec(binStr):
-    decInt = int(binStr, 2)
-    return decInt
-
-def convertBinListToStr(binList):
-    binStr = [str(binList) for binList in binList]
-    binStr = ''.join(binStr)
-    return binStr
-
-# the function to which we xor the key with the message half:
-def functionXor(keyInBin, rightMessageBin):
-    print("keyInBin:")
-    print(keyInBin)
-    print("right half of message bin:")
-    print(rightMessageBin)
-    print(type(keyInBin[0]))
+        print("sub keys in hex stripped: ", subKeysNHexStr)
+        subKeys.append(subKeysNHexStr)
+    return subKeys
 
 
 # Press the green button in the gutter to run the script.
