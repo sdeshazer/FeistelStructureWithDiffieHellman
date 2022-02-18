@@ -61,6 +61,9 @@ NameLettersInBin = []
 MessageInAsciiValue = []
 MessageInBin = []
 
+SubKeys = []
+
+Bin1FFByte16 = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1]
 subKeys = []
 
 
@@ -131,6 +134,10 @@ def padBinary(binary, paddingLen):
     return padding + binary
 
 
+def andBitsTogetherSize16(twoByteA, twoByteB):
+    return twoByteA & twoByteB
+
+
 # parse a text file for primes:
 def parse_primes_txt():
     with open('primes.txt') as f:
@@ -186,7 +193,7 @@ def getStartingFromNonce(nonceStr):
 def feistelEncrypt():
     # input name letters to retrieve ascii:
     asciiNameValues = get_ascii_value(NameLetters)
-    print("please type nonce: 0123, a key and a message to encrypt. ex: 0123 fe23 a0f3d2219c")
+    print("please type nonce: 0123, a key and a message to encrypt separated by spaces. ex: 0123 fe23 a0f3d2219c")
     line = getInput()
     i = 0
     input = line.split()
@@ -203,6 +210,10 @@ def feistelEncrypt():
     print("key: " + key)
     print("message: " + message)
     addCounterToNonce(nonce, message)
+    calcSubKeys(key)
+
+
+def fiestelStructure(message):
     # split the message in half:
     left = message[:len(message) // 2]
     right = message[len(message) // 2:]
@@ -221,21 +232,6 @@ def feistelEncrypt():
         byteInBin = convertDecToBinaryAndPad(dec, 8)
         rightBin.append(byteInBin)
 
-    # print("message in Bin:")
-    # print("left: ")
-    # print(leftBin)
-    # print("right: ")
-    # print(rightBin)
-    # print("----------------------------------")
-    # print("----------[key Check]-------------")
-    # print("key:" + key)
-    keyascii = convertLetterToAscii(key)
-    keyBin = []
-    for dec in keyascii:
-        byteInBin = convertDecToBinaryAndPad(dec, 8)
-        keyBin.append(byteInBin)
-
-    calcSubKeys(key)
 
 
 # takes a list of ascii values and returns a list of hex
@@ -274,19 +270,19 @@ def addCounterToNonce(nonce, message):
     print("arrayMsgParitioned:")
     print(arrayMsgParitioned)
 
-    concatinatedValues = []
+    concatenatedValues = []
     for msg in arrayMsgParitioned:
         if len(arrayMsgParitioned) > counter1:
             hexMsg = "".join(arrayMsgParitioned[counter1])
             counter1 = counter1 + 1
-            concatinatedValues.append(hexMsg)
-    print("concatinated Values:")
-    print(concatinatedValues)
+            concatenatedValues.append(hexMsg)
+    print("concatenated Values:")
+    print(concatenatedValues)
 
     msgBinary = []
-    for msg in concatinatedValues:
-        if len(concatinatedValues) > counter2:
-            paddedBinMsg = "{0:8b}".format(int(concatinatedValues[counter2], 16))
+    for msg in concatenatedValues:
+        if len(concatenatedValues) > counter2:
+            paddedBinMsg = "{0:8b}".format(int(concatenatedValues[counter2], 16))
             counter2 = counter2 + 1
             msgBin = [int(msg) for msg in str(paddedBinMsg)]
             msgBinary.append(msgBin)
@@ -316,34 +312,82 @@ def addCounterToNonce(nonce, message):
 def calcSubKeys(key):
     print("Name Primes:")
     print(NamePrimes)
-    # the number of rounds:
+    # the number of rounds N = 0, 1, 2, 3:
     numOfCycles = [0, 1, 2, 3]
 
     for cycle in numOfCycles:
-        counter = numOfCycles[cycle]
-        rollValue = counter * 4
-        rollValue = -abs(rollValue)
+        counterN = numOfCycles[cycle]
+        # padding:
         keyBin = "{0:08b}".format(int(key, 16))
-        # print("binaryKey:")
-        # print(keyBin)
-        binNamePrimesStr = "{0:b}".format(NamePrimes[counter])
-        # print("binary name:")
-        # print(type(binName))
+        binNamePrimes = "{0:b}".format(NamePrimes[counterN])
 
-        namePrimesInBin = []
+        keyStr = []
+        for bit in keyBin:
+            keyStr.append(int(bit))
+
+        binNamePrimesList = []
         # convert from string to list of bits:
-        for binary in binNamePrimesStr:
-            namePrimesInBin.append(int(binary))
-            if len(namePrimesInBin) < 16:
-                namePrimesInBin.insert(0,0)
-        print("name prime bin sting:")
-        print(binNamePrimesStr)
-        print("namePrimesInBin")
-        print(namePrimesInBin)
+        for binary in binNamePrimes:
+            binNamePrimesList.append(int(binary))
+        while len(binNamePrimesList) < 16:
+                binNamePrimesList.insert(0, 0)
+        print("binNamePrimes:")
+        print(binNamePrimes)
+        print("binNamePrimesStr: ")
+        print(binNamePrimesList)
+        # rotating the key left N * 4 :
+        rotateLeftKeyList = numpy.roll(keyStr, -abs(counterN * 4), axis=None)
+        # here for the sake of conversion to nda array:
+        binNamePrimesList = numpy.roll(binNamePrimesList, 0, axis=None)
+
+        keyAnd1FFList = rotateLeftKeyList & Bin1FFByte16
+
+        primesAnd1FFList = binNamePrimesList & Bin1FFByte16
+
+        print("rolled key:")
+        print(rotateLeftKeyList)
+        print("key and 1FF:")
+        print(keyAnd1FFList)
+        print("primes and 1FF")
+        print(primesAnd1FFList)
+        lowerByteKeyAnd1FFList = getLowerByte(keyAnd1FFList)
+        lowerBytePrimesAnd1FFList = getLowerByte(primesAnd1FFList)
+        print("lowerByteKeyAnd1FFList:")
+        print(lowerByteKeyAnd1FFList)
+        print("lowerBytePrimesAnd1FFList")
+        print(lowerBytePrimesAnd1FFList)
+
+        # xor to get the subkey based on primes and key/counter:
+        subkeyN = exor(lowerBytePrimesAnd1FFList, lowerBytePrimesAnd1FFList)
+        subkeyNStr = convertBinListToStr(subkeyN)
+        subkeyNDec = convertBinStringToDec(subkeyNStr)
+        subkeyNHex = hex(subkeyNDec)
+        subKeysNHexStr = stripOff0xOfHexValueReturnsStr(subkeyNHex)
+        SubKeys.append(subKeysNHexStr)
 
 
+def stripOff0xOfHexValueReturnsStr(fullHexValue):
+    cList = list(fullHexValue)
+    hexStr = cList[2:]
+    cList = ''.join(cList)
+    return cList
 
-# the function to which we xor the key :
+def getLowerByte(twoBytesList):
+    return twoBytesList[8:]
+
+def exor(byteA, byteB):
+    return byteA ^ byteB
+
+def convertBinStringToDec(binStr):
+    decInt = int(binStr, 2)
+    return decInt
+
+def convertBinListToStr(binList):
+    binStr = [str(binList) for binList in binList]
+    binStr = ''.join(binStr)
+    return binStr
+
+# the function to which we xor the key with the message half:
 def functionXor(keyInBin, rightMessageBin):
     print("keyInBin:")
     print(keyInBin)
