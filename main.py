@@ -2,6 +2,7 @@
 # python 3.9   w/ Pycharm
 # CS 427 Spr 2022
 # S A M A
+
 # --------------------------------------
 #  Prime Index: [83 - 64] = 19 : S Index
 #  65 - 64 = 1 : A Index
@@ -41,7 +42,7 @@
 # from STANDARD INPUT
 
 # m = plain text
-#   1. parition m and calculate subkeys
+#   1. partition m and calculate subkeys
 #   2. R0 is encoded using F(K, m) = (ki xor m) and store that in variable E
 #   3. new L1 = R0
 #   4. new R1 = L0 xor E, where E is our function(ki,m), ki from our subkeys from nonce and primes.
