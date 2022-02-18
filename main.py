@@ -61,8 +61,6 @@ NameLettersInBin = []
 MessageInAsciiValue = []
 MessageInBin = []
 
-SubKeys = []
-
 Bin1FFByte16 = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1]
 
 
@@ -186,7 +184,7 @@ def rotateBitsLeft(binary, numOfBitsToRotate):
 
 def stripOff0xOfHexValueReturnsStr(fullHexValue):
     cList = list(fullHexValue)
-    cList= cList[2:]
+    cList = cList[2:]
     cList = ''.join(cList)
     return cList
 
@@ -243,11 +241,11 @@ def feistelEncrypt():
     print("nonce: " + nonce)
     print("key: " + key)
     print("message: " + message)
-    addCounterToNonce(nonce, message, key)
-    SubKeys = calcSubKeys(key)
+    subKeys = calcSubKeys(key)
+    addCounterToNonce(nonce, message, subKeys)
 
 
-def addCounterToNonce(nonce, message, key):
+def addCounterToNonce(nonce, message, subKeys):
     if (len(message) % 2) > 0:
         print("error, must be an even number of character in message")
         print("message length:")
@@ -300,6 +298,7 @@ def addCounterToNonce(nonce, message, key):
         i = i + 1
     print("msg binary:", msgBinary)
 
+    completeEncrptedMessage = []
     while counter3 < len(msgBinary):
         nonce = int(nonce)
         newNonce = nonce + counter3
@@ -309,13 +308,46 @@ def addCounterToNonce(nonce, message, key):
         while len(nStr) < 4:
             nStr = '0' + str(nStr)  # adding leading zero to the nonce string
         print(nStr)
+        currentRoundResult = fiestelStructure(concatenatedMsgFromPartition[counter3], nStr, subKeys)
+        currentRoundResult = ''.join(currentRoundResult)
+        currentRoundResult = str(currentRoundResult ).replace(' ', '').replace('[', '').replace(']', '')
+        encryptedMessage = hex(int(currentRoundResult , 16) ^ int(concatenatedMsgFromPartition[counter3], 16))
+        completeEncrptedMessage.append(encryptedMessage[2:])
         counter3 = counter3 + 1
-    #  fiestelStructure(msgBinary[counter3], key, concatenatedMsgFromPartition)
+    completeEncrptedMessage = ''.join(completeEncrptedMessage)
+    print("completeEncrptedMessage", completeEncrptedMessage )
 
 
-def fiestelStructure(msgBinByte, nStr, msg):
+def fiestelStructure(msgBinByte, nStr, subKeys):
     counterN = 0
+    numberOfRounds = 4
+    # convert nonce for encrpytion:
+    nonceList = [int(char) for char in str(nStr)]
+    nonceArray = numpy.roll(nonceList, 0, axis=None)
+    # split nonce in half:
+    nLeft = nonceArray[0:2]
+    nRight = nonceArray[2:]
 
+    nRight = str(nRight).replace(' ', '').replace('[', '').replace(']', '')
+    nLeft = str(nLeft).replace(' ', '').replace('[', '').replace(']', '')
+
+    print("nleft:", nLeft, "nright:", nRight)
+    print("subkeys", subKeys)
+    # the Rounding function F(ki, m) = (ki xor m):
+    # where ki = subkey[i]
+    # nleft is half of nonce, nright is right of nonce (constants)
+    # here is where the key and the nonce are xored together to later be used with m:
+    while counterN < numberOfRounds:
+        rightNxorKey = hex(int(nRight, 16) ^ int(subKeys[counterN], 16))
+        newValue = hex(int(rightNxorKey, 16) ^ int(nLeft, 16))
+        # switch original left to be right:
+        nLeft = nRight
+        # change original right to be our new encrpyted value:
+        nRight = newValue
+        counterN = counterN + 1
+    # the result of ki xord with nonce:
+    result = numpy.concatenate((nRight[2:], nLeft[2:]), axis=None)
+    return result
 
 
 # takes a list of ascii values and returns a list of hex
